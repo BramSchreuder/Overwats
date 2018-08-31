@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Gamedev Canvas Workshop</title>
+    <style>
+    	* { padding: 0; margin: 0; }
+    	canvas { display: block; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+<canvas id="game" width="1000" height="1000"></canvas>
+
+<script>
+
+
+
+	var canvas = document.getElementById("game");
+
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+	var pharahStatus = 0;
+	var pharahFrameStatus = 0;
+	// canvas maken
+	var currentFrame = 0;
+	var ctx = canvas.getContext("2d");
+	var x = canvas.width/2;							// ball maken
+	var y = canvas.height/2;
+	var xv = 0;
+	var yv = 0;
+	var rightPressed = false;						// knop variabelen
+	var leftPressed = false;
+	var upPressed = false;
+	var downPressed = false;
+	var spacePressed = false;
+	var lastPressedRight = 1;
+	var spaceCooldown = 3000;
+	var spaceAnimation = false;
+	var spaceAnimationX = 0;
+	var spaceAnimationY = 0;
+	var spaceCounter = 1;
+	var jetpackFuel = 1000;
+
+</script>
+<script src="crosshair.js"> </script>
+<script src="background.js"></script>
+<script src="rockets.js"></script>
+<script src="abilityinterface.js"></script>
+<script src="functions.js"></script>
+<script src="imageloader.js"></script>
+<script>
+
+	function drawPharah(){
+
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	
+	drawBackground();
+	 drawCrosshair();
+	 drawRockets();
+	 drawInterface();
+	 drawRocketExplosions();
+		currentFrame++;
+	
+																										//PHARAH IMAGE STATUS
+		if(y>=canvas.height-55-Pharah_Image1.height/2 && lastPressedRight == 1) {pharahStatus = 1}									
+		if(y>=canvas.height-55-Pharah_Image1.height/2 && lastPressedRight == 0) {pharahStatus = 2}
+		if(y>=canvas.height-55-Pharah_Image1.height/2 && xv > 100) {pharahStatus = 3}	
+		if(y>=canvas.height-55-Pharah_Image1.height/2 && xv < -100) {pharahStatus = 4}	
+		if(y<canvas.height-55-Pharah_Image1.height/2 && xv > 0) {pharahStatus = 5}
+		if(y<canvas.height-55-Pharah_Image1.height/2 && xv < 0) {pharahStatus = 6}
+		if(y>=canvas.height-55-Pharah_Image1.height/2 && downPressed && lastPressedRight == 1) {pharahStatus = 7}
+		if(y>=canvas.height-55-Pharah_Image1.height/2 && downPressed && lastPressedRight == 0) {pharahStatus = 8}
+		if (currentFrame % Math.floor(30/(Math.abs(xv)/100)) == 0){pharahFrameStatus++}
+		if (pharahFrameStatus > 16){pharahFrameStatus = 0}
+
+
+
+		ctx.beginPath();	// ball tekenen
+		if (pharahStatus == 1){ctx.drawImage(Pharah_Image1,x,y,Pharah_Image1.width/3,Pharah_Image1.height/3)}
+		else 	if (pharahStatus == 2){ctx.drawImage(Pharah_Image2,x,y,Pharah_Image2.width/3,Pharah_Image2.height/3)}
+		else 	if (pharahStatus == 3){ctx.drawImage(Pharah_Image3[pharahFrameStatus],x,y,Pharah_Image1.width/3,Pharah_Image1.height/3)}
+		else 	if (pharahStatus == 4){ctx.drawImage(Pharah_Image4[pharahFrameStatus],x,y,Pharah_Image1.width/3,Pharah_Image1.height/3)}
+		else 	if (pharahStatus == 5){ctx.drawImage(Pharah_Image5,x,y,Pharah_Image5.width/3,Pharah_Image5.height/3)}
+		else 	if (pharahStatus == 6){ctx.drawImage(Pharah_Image6,x,y,Pharah_Image6.width/3,Pharah_Image6.height/3)}
+		else 	if (pharahStatus == 7){ctx.drawImage(Pharah_Image7,x,y,Pharah_Image7.width/3,Pharah_Image7.height/3)}
+		else 	if (pharahStatus == 8){ctx.drawImage(Pharah_Image8,x,y,Pharah_Image8.width/3,Pharah_Image8.height/3)}
+		ctx.fillStyle = "#FF0000";
+		ctx.fill();
+		ctx.closePath();
+		if (spacePressed & spaceCooldown==3000){yv = -700;								// Explosie
+			spaceCooldown = 0;
+			spaceAnimation = true;
+			spaceAnimationX = x - 60;
+			spaceAnimationY = y;
+
+		}
+		if (spaceAnimation){
+			space_Image = new Image ();
+			space_Image.src = 'images/explosion1/explosion1_' + Math.floor(spaceCounter) + '.png';
+			ctx.beginPath();									// ball tekenen
+			ctx.drawImage(space_Image,spaceAnimationX,spaceAnimationY,space_Image.width/1.5,space_Image.height/1.5)
+			ctx.fillStyle = "#FF0000";
+			ctx.fill();
+			ctx.closePath();
+			spaceCounter = spaceCounter + 0.15;
+			if (spaceCounter > 6){spaceAnimation = false; spaceCounter = 1;}
+		}
+
+		if (rightPressed && pharahStatus < 5){xv = 400}
+		else if (rightPressed && pharahStatus > 4) {xv += 5}// snelheid x aanpassen aan knoppen
+		if (leftPressed && pharahStatus < 5){xv = -400}
+		else if (leftPressed && pharahStatus > 4) {xv += -5}
+
+
+		if (!rightPressed & !leftPressed & pharahStatus < 5) {xv = 0}
+		else if (!rightPressed & !leftPressed & pharahStatus > 4) {xv = xv/1.05}// afremmen x
+
+		
+		if (upPressed & jetpackFuel > 0){
+			yv += -6
+			jetpackFuel += -10;
+		}
+		else if ( y != canvas.height-Pharah_Image1.height/2){
+			yv += 10;
+
+		}
+	
+			if (jetpackFuel < 1000 ){jetpackFuel += 3}	// fuel bijtanken
+			if (spaceCooldown < 3000){spaceCooldown += 10}
+
+
+		ctx.beginPath();
+		ctx.rect((canvas.width/2)-100,canvas.height-100,200,20)
+		ctx.fillStyle = "#FF0000";
+		ctx.fill();
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.rect((canvas.width/2)-100,canvas.height-100,jetpackFuel/5,20)
+		ctx.fillStyle = "#32CD32";
+		ctx.fill();
+		ctx.closePath();
+
+
+		x = x + xv/60;								// positie aanpassen Pharah
+		y = y + yv/60;
+		if (x>canvas.width){x = 0}						// Pharah gaat over de rand
+		if (y>canvas.height-50-Pharah_Image1.height/2){y = canvas.height-50-Pharah_Image1.height/2; yv = 0;}
+		if (x<0){x=canvas.width}
+		if (y<0){y=canvas.height-300}
+
+		};
+
+
+
+
+
+
+
+
+	document.addEventListener("keydown",keyDownHandler, false);	// Checken of knop ingedrukt is
+	document.addEventListener("keyup",keyUpHandler, false);
+	function keyDownHandler(e){
+		if(e.keyCode==68){ rightPressed = true;}
+	 else if (e.keyCode==65){leftPressed = true; }
+	 else if (e.keyCode==87){upPressed = true; }
+	 else if (e.keyCode==83){downPressed = true;}
+	 else if (e.keyCode==32){spacePressed = true;}
+	 }
+	 function keyUpHandler(e){
+		if(e.keyCode==68){ rightPressed = false; lastPressedRight = 1;}
+	 else if (e.keyCode==65){leftPressed = false; lastPressedRight = 0;}
+	 else if (e.keyCode==87){upPressed = false;}
+	 else if (e.keyCode==83){downPressed = false;}
+	  else if (e.keyCode==32){spacePressed = false;}
+	 }
+
+
+	setInterval(drawPharah,1000/60);
+</script>
+
+</body>
+</html>
